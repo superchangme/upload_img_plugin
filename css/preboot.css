@@ -1,0 +1,6 @@
+/*!
+ * Preboot v2
+ *
+ * Open sourced under MIT license by @mdo.
+ * Some variables and mixins from Bootstrap (Apache 2 license).
+ */body{background-image:-webkit-gradient(linear,0 0,100% 0,from(#555),to(#333));background-image:-webkit-linear-gradient(left,#555,#333);background-image:-o-linear-gradient(left,#555,#333);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff555555', endColorstr='#ff333333', GradientType=1);background:0 0}

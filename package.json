@@ -1,0 +1,11 @@
+{
+  "name": "upload_img_plugin",
+  "version": "1.0.7",
+  "description": "crop img  and upload img",
+  "main": "adjustImg.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "tom.chang",
+  "license": "ISC"
+}

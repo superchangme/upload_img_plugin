@@ -334,14 +334,14 @@
         })
         if(opts.bindFile){
             if(typeof opts.bindFile=="string"){
-                imgFileCb(opts.bindFile);
+                imgFileCb(opts.bindFile,'fix');
             }else if(opts.bindFile instanceof HTMLImageElement){
                 opts.bindFile.addEventListener('load',function(){
-                    imgFileCb(this);
+                    imgFileCb(this,'fix');
                 })
             }else if(opts.bindFile instanceof Image){
                 opts.bindFile.addEventListener('load',function(){
-                    imgFileCb(this);
+                    imgFileCb(this,'fix');
                 })
             } else if($(opts.bindFile).is("input[type=file]")){
                 opts.bindFile.attr("cropId", ++_.cropImage.id);
@@ -381,7 +381,7 @@
                             }
                         setTimeout(function(){
                             img.src=URL.createObjectURL(preview)
-                        },1000)
+                        },0)
                     }
                     opts.bindFile.after(opts.bindFile.clone()).remove();
                 })
@@ -390,7 +390,7 @@
                 getCropFile();
             }
         }
-        function imgFileCb(imgOrSrc,noCache){
+        function imgFileCb(imgOrSrc,fixRad){
             if(typeof imgOrSrc=='string'){
                 var img=new Image;
                 img.onload=function(){
@@ -401,13 +401,42 @@
             }else{
                 runLoad();
             }
+          
             function runLoad(){
-                G.preview=imgOrSrc;
-                var o=getCropInfo();
-                $bindPreview.prop("style",'')
-                opts.onLoad({
-                    originSrc:imgOrSrc.src,width: o.dWidth,height: o.dHeight,ratio: G.ratio
-                    ,x: o.x,y: o.y,dWidth: o.dWidth,dHeight: o.dHeight,scale: o.scale})
+                var img = imgOrSrc;
+                if(fixRad){
+                    //如果是原图则需要先修正角度
+                    EXIF.getData(img,function() {
+                        var orientation=EXIF.getTag(this, 'Orientation')||1;
+                        if(orientation!=1){
+                            var mega = new MegaPixImage(img);
+                            mega.imageLoadListeners=null;
+                            mega.render($bindPreview[0], {
+                                maxWidth: 1024,
+                                quality:1,
+                                imageType:"image/jpeg",
+                                orientation:orientation
+                            }, function () {
+                                G.preview=$bindPreview[0];
+                                var o=getCropInfo();
+                                $bindPreview.prop("style",'')
+                                opts.onLoad({
+                                    originSrc:G.preview.src,width: o.dWidth,height: o.dHeight,ratio: G.ratio
+                                    ,x: o.x,y: o.y,dWidth: o.dWidth,dHeight: o.dHeight,scale: o.scale})
+                            })
+                        }else{
+                            imgFileCb(img);
+                        }
+                                        //mega.imageLoadListeners[0]()
+                    })
+                }else{
+                    G.preview=imgOrSrc;
+                    var o=getCropInfo();
+                    $bindPreview.prop("style",'')
+                    opts.onLoad({
+                        originSrc:imgOrSrc.src,width: o.dWidth,height: o.dHeight,ratio: G.ratio
+                        ,x: o.x,y: o.y,dWidth: o.dWidth,dHeight: o.dHeight,scale: o.scale})
+                }
             }
             // alert(+new Date-start)
         }
@@ -433,9 +462,11 @@
             return {x:x,y:y,dWidth:dWidth,dHeight:dHeight,scale:scale,iWidth:iWidth,iHeight:iHeight}
         }
         function getCropFile(option){
+            console.log(option)
             G.y*=opts.devicePixelRatio;
             G.x*=opts.devicePixelRatio;
             var coordRad=Math.atan2(-G.y,G.x);
+            // console.log(coordRad)
             var radius=Math.sqrt(G.y*G.y+G.x*G.x)
             var o=getCropInfo(),
                 offsetX=Math.sin(Math.PI/2-coordRad-Math.PI*(G.rotate)/180)*radius,
@@ -443,7 +474,6 @@
                 x=-o.dWidth/2*G.scale+ offsetX,
                 y=-o.dHeight/2*G.scale+ offsetY,result;
             option=option||{};
-            // console.log(offsetX,offsetY,x,y)
             if(option.lowDpi&&opts.enableRatio){
                 o.dHeight/=opts.devicePixelRatio;
                 o.dWidth/=opts.devicePixelRatio;
@@ -457,7 +487,6 @@
             }
             ctx.translate(canvas.width/2,canvas.height/2);
             ctx.rotate(Math.PI*G.rotate/180)
-
             // if(G.rotate==90){
             //     x=-o.dWidth/2*G.scale+ G.y;
             //     y=-o.dHeight/2*G.scale- G.x;
@@ -472,11 +501,15 @@
             ctx.drawImage(G.preview,x,y, o.dWidth* G.scale, o.dHeight* G.scale);
             //,0,0,G.preview.width*G.scale, G.preview.height*G.scale);//,0,0, G.preview.width*G.scale, G.preview.height*G.scale);
             ctx.restore();
-            result=canvas.toDataURL("image/"+option.type?option.type:'png');
+            console.log(offsetX,offsetY,x,y,o.dWidth,o.dHeight)
+
+            result=canvas.toDataURL("image/"+(option.type?option.type:'png'));
             if(option.lowDpi&&opts.enableRatio){
                 canvas.width*=opts.devicePixelRatio;
                 canvas.height*=opts.devicePixelRatio;
             }
+            var sRadius=Math.pow(o.dHeight*o.dHeight+o.dWidth*o.dWidth,1/2)
+            var sRad=Math.atan2(-o.dHeight,o.dWidth)
             //返回Blob文件
             var that = this,
                 dfd = $.Deferred();
@@ -487,11 +520,11 @@
                         // of the original file in the files list:
                         dfd.resolve(blob);
                     }
-                ,"image/jpeg");
+                ,"image/"+(option.type?option.type:'png'));
             } else{
                 dfd.resolve()
             }
-            return {src:result,dfd:dfd.promise(),file:IMG_FILE};
+            return {src:result,dfd:dfd.promise(),file:IMG_FILE,oWidth:o.iWidth,oHeight:o.iHeight,x:x,y:y,dWidth:o.dWidth,dHeight:o.dHeight};
         }
         if(!opts.useHammer){
             $(document).on(tapend,function(e) {

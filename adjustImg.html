@@ -143,7 +143,7 @@
             $uploadPage.hide();
             myCrop.setCropStyle(previewStyle)
             //自定义getCropFile({type:"png",background:"red",lowDpi:true})
-            cropInfo=myCrop.getCropFile({});
+            cropInfo=myCrop.getCropFile({type:"jpeg"});
             $previewResult.attr("src",cropInfo.src).show();
 
             //可选传base64或者file对象

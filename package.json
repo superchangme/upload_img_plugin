@@ -1,8 +1,12 @@
 {
   "name": "upload_img_plugin",
-  "version": "1.0.7",
+  "version": "1.0.91",
   "description": "crop img  and upload img",
   "main": "adjustImg.html",
+  "repository": { 
+    "type": "Git", 
+    "url": "git+https://github.com/superchangme/upload_img_plugin.git" 
+    }, 
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
